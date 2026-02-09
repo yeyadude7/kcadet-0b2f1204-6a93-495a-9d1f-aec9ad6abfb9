@@ -1,0 +1,47 @@
+<div class="min-h-screen bg-slate-50 text-slate-900">
+  <!-- Top bar -->
+  <header class="border-b border-slate-200 bg-white">
+    <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+      <div class="flex items-baseline gap-3">
+        <div class="text-lg font-semibold tracking-tight">Task Manager</div>
+        <div class="text-xs text-slate-500">RBAC + Org Scope</div>
+      </div>
+
+      <nav class="flex items-center gap-3">
+        <a
+          routerLink="/board"
+          routerLinkActive="text-slate-900"
+          class="text-sm text-slate-600 hover:text-slate-900"
+          >Board</a
+        >
+
+        <a
+          *ngIf="canSeeAudit()"
+          routerLink="/audit"
+          routerLinkActive="text-slate-900"
+          class="text-sm text-slate-600 hover:text-slate-900"
+          >Audit</a
+        >
+
+        <div class="mx-2 h-5 w-px bg-slate-200"></div>
+
+        <div class="text-right leading-tight">
+          <div class="text-xs text-slate-500">{{ email() }}</div>
+          <div class="text-xs font-medium text-slate-800">{{ role() }}</div>
+        </div>
+
+        <button
+          (click)="logout()"
+          class="rounded-md border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+        >
+          Logout
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Page container -->
+  <main class="mx-auto max-w-6xl px-6 py-6">
+    <router-outlet></router-outlet>
+  </main>
+</div>

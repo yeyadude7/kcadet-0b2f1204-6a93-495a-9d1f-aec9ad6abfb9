@@ -1,0 +1,212 @@
+<div class="space-y-5">
+
+
+  <!-- Header row -->
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <div class="text-xl font-semibold tracking-tight">Board</div>
+      <div class="mt-1 text-sm text-slate-600">
+        Tasks are scoped by organization + role. Drag & drop to reorder.
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <input
+        [ngModel]="query()"
+        (ngModelChange)="query.set($event)"
+        placeholder="Search…"
+        class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 sm:w-56"
+      />
+
+      <select
+        [ngModel]="category()"
+        (ngModelChange)="category.set($event)"
+        class="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400"
+      >
+        <option *ngFor="let c of categories()" [value]="c">{{ c }}</option>
+      </select>
+
+      <select
+        [ngModel]="sort()"
+        (ngModelChange)="sort.set($event)"
+        class="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400"
+      >
+        <option value="position">Sort: Position</option>
+        <option value="createdAt">Sort: Created</option>
+        <option value="title">Sort: Title</option>
+      </select>
+    </div>
+  </div>
+
+  <div *ngIf="error" class="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+    {{ error }}
+  </div>
+
+  <!-- Create (Owner/Admin only) -->
+  <div *ngIf="canWrite()" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div class="grid gap-3 sm:grid-cols-12">
+      <div class="sm:col-span-4">
+        <label class="text-xs font-medium text-slate-600">Title</label>
+        <input
+          [(ngModel)]="newTitle"
+          class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+          placeholder="e.g., Add RBAC tests"
+        />
+      </div>
+
+      <div class="sm:col-span-5">
+        <label class="text-xs font-medium text-slate-600">Description</label>
+        <input
+          [(ngModel)]="newDescription"
+          class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+          placeholder="Optional"
+        />
+      </div>
+
+      <div class="sm:col-span-2">
+        <label class="text-xs font-medium text-slate-600">Category</label>
+        <input
+          [(ngModel)]="newCategory"
+          class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+          placeholder="General"
+        />
+      </div>
+
+      <div class="sm:col-span-1 flex items-end">
+        <button
+          (click)="create('Todo')"
+          class="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
+        >
+          Add
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!canWrite()" class="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600 shadow-sm">
+    You are signed in as <span class="font-medium text-slate-900">{{ role() }}</span>. This role is read-only.
+  </div>
+
+
+    <!-- Completion visualization -->
+    <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div class="flex items-center justify-between">
+        <div>
+        <div class="text-sm font-semibold text-slate-900">Task completion</div>
+        <div class="text-xs text-slate-500">
+            Based on current filters
+        </div>
+        </div>
+        <div class="text-xs text-slate-500">
+        Total: <span class="font-medium text-slate-800">{{ summary().total }}</span>
+        </div>
+    </div>
+
+    <div class="mt-4 space-y-3">
+        <div>
+        <div class="flex items-center justify-between text-xs text-slate-600">
+            <span>Todo</span>
+            <span>{{ summary().todo }} ({{ summary().todoPct }}%)</span>
+        </div>
+        <div class="mt-1 h-2 w-full overflow-hidden rounded bg-slate-100">
+            <div class="h-2 bg-slate-400" [style.width.%]="summary().todoPct"></div>
+        </div>
+        </div>
+
+        <div>
+        <div class="flex items-center justify-between text-xs text-slate-600">
+            <span>In Progress</span>
+            <span>{{ summary().inprog }} ({{ summary().inprogPct }}%)</span>
+        </div>
+        <div class="mt-1 h-2 w-full overflow-hidden rounded bg-slate-100">
+            <div class="h-2 bg-slate-600" [style.width.%]="summary().inprogPct"></div>
+        </div>
+        </div>
+
+        <div>
+        <div class="flex items-center justify-between text-xs text-slate-600">
+            <span>Done</span>
+            <span>{{ summary().done }} ({{ summary().donePct }}%)</span>
+        </div>
+        <div class="mt-1 h-2 w-full overflow-hidden rounded bg-slate-100">
+            <div class="h-2 bg-slate-900" [style.width.%]="summary().donePct"></div>
+        </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Board -->
+    <div class="grid gap-4 lg:grid-cols-3">
+    <section
+        *ngFor="let col of columns"
+        class="rounded-xl border border-slate-200 bg-white shadow-sm"
+    >
+        <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+        <div class="text-sm font-semibold tracking-tight">
+            {{ col.label }}
+        </div>
+        <div class="text-xs text-slate-500">
+            {{ countFor(col.key) }}
+        </div>
+        </div>
+
+        <div
+        class="min-h-[320px] p-3"
+        cdkDropList
+        [id]="col.key"
+        [cdkDropListData]="tasksFor(col.key)"
+        [cdkDropListConnectedTo]="connectedDropListIds"
+        (cdkDropListDropped)="drop(col.key, $event)"
+        >
+        <div
+            *ngFor="let t of tasksFor(col.key); trackBy: trackById"
+            cdkDrag
+            class="mb-3 rounded-lg border border-slate-200 bg-white p-3 hover:border-slate-300"
+        >
+            <div class="flex items-start justify-between gap-3">
+            <div>
+                <div class="text-sm font-semibold text-slate-900">{{ t.title }}</div>
+                <div *ngIf="t.description" class="mt-1 text-sm text-slate-600">
+                {{ t.description }}
+                </div>
+                <div class="mt-2 text-xs text-slate-500">
+                <span class="rounded-md border border-slate-200 px-2 py-0.5">{{ t.category }}</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col items-end gap-2">
+                <div class="text-[11px] text-slate-400">#{{ t.position }}</div>
+
+                <div *ngIf="canWrite()" class="flex items-center gap-2">
+                <select
+                    class="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs"
+                    [ngModel]="t.status"
+                    (ngModelChange)="setStatus(t, $event)"
+                >
+                    <option value="Todo">Todo</option>
+                    <option value="InProgress">InProgress</option>
+                    <option value="Done">Done</option>
+                </select>
+
+                <button
+                    (click)="remove(t)"
+                    class="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
+                >
+                    Delete
+                </button>
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <div
+            *ngIf="tasksFor(col.key).length === 0"
+            class="flex h-40 items-center justify-center text-sm text-slate-400"
+        >
+            No tasks
+        </div>
+        </div>
+    </section>
+    </div>
+
+</div>

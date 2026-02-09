@@ -1,0 +1,85 @@
+<div class="space-y-5">
+  <div class="flex items-end justify-between">
+    <div>
+      <div class="text-xl font-semibold tracking-tight">Audit Log</div>
+      <div class="mt-1 text-sm text-slate-600">
+        Immutable record of actions. Visible to Owner/Admin only.
+      </div>
+    </div>
+
+    <button
+      (click)="refresh()"
+      class="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+    >
+      Refresh
+    </button>
+  </div>
+
+  <div *ngIf="error()" class="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+    {{ error() }}
+  </div>
+
+  <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div class="border-b border-slate-200 px-4 py-3 text-sm font-semibold">
+      Recent events
+    </div>
+
+    <div *ngIf="loading()" class="p-4 text-sm text-slate-600">Loading…</div>
+
+    <div *ngIf="!loading()" class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+          <tr>
+            <th class="px-4 py-3">Time</th>
+            <th class="px-4 py-3">Actor</th>
+            <th class="px-4 py-3">Result</th>
+            <th class="px-4 py-3">Action</th>
+            <th class="px-4 py-3">Entity</th>
+            <th class="px-4 py-3">Summary</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let r of rows()" class="border-t border-slate-200">
+            <td class="px-4 py-3 whitespace-nowrap text-slate-700">
+              {{ r.timestamp | date: 'short' }}
+            </td>
+            <td class="px-4 py-3 text-slate-700">
+              {{ r.userId }}
+            </td>
+            <td class="px-4 py-3">
+            <span
+                class="rounded-md border border-slate-200 px-2 py-0.5 text-xs"
+                [class.border-green-200]="r.result === 'ALLOW'"
+                [class.bg-green-50]="r.result === 'ALLOW'"
+                [class.text-green-700]="r.result === 'ALLOW'"
+                [class.border-red-200]="r.result === 'DENY'"
+                [class.bg-red-50]="r.result === 'DENY'"
+                [class.text-red-700]="r.result === 'DENY'"
+            >
+                {{ r.result }}
+            </span>
+            </td>
+            <td class="px-4 py-3">
+              <span class="rounded-md border border-slate-200 px-2 py-0.5 text-xs">
+                {{ r.action }}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-slate-700">
+              {{ r.resourceType }}<span *ngIf="r.resourceId">: {{ r.resourceId }}</span>
+            </td>
+            <td class="px-4 py-3 text-slate-600">
+              {{ r.reason || '-' }}
+            </td>
+          </tr>
+
+          <tr *ngIf="rows().length === 0 && !loading()">
+            <td colspan="6" class="px-4 py-10 text-center text-slate-400">
+              No audit events found.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
